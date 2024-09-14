@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-import CameraController from "./CameraController.js";
+import Camera from "./Camera.js";
 
 const Scene = () => {
     const rendererRef = useRef(null);
@@ -25,7 +25,7 @@ const Scene = () => {
         scene.background = new THREE.Color(0x777777);
         sceneRef.current = scene;
 
-        cameraRef.current = new CameraController(gameWindow).camera;
+        cameraRef.current = new Camera(gameWindow).camera;
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);

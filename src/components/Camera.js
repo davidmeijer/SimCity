@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-class CameraController {
+class Camera {
     constructor(gameWindow) {
         this.gameWindow = gameWindow;
 
@@ -219,4 +219,4 @@ class CameraController {
     };
 };
 
-export default CameraController;
+export default Camera;
