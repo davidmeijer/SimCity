@@ -1,19 +1,17 @@
 import React from "react";
 import "./main.css";
 
-import Scene from "./components/Scene";
+import Game from "./components/Game";
 
 function App() {
     return (
         <div
             style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
+                width: "100vw",
                 height: "100vh",
             }}
         >
-            <Scene />
+            <Game />
         </div>
     );
 };

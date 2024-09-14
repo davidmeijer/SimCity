@@ -10,13 +10,13 @@ class Camera {
         this.MIDDLE_MOUSE_BUTTON = 1;
         this.RIGHT_MOUSE_BUTTON = 2;
 
-        this.MIN_CAMERA_RADIUS = 2;  // Minimum zoom distance.
-        this.MAX_CAMERA_RADIUS = 10;  // Maximum zoom distance.
+        this.MIN_CAMERA_RADIUS = 10;  // Minimum zoom distance.
+        this.MAX_CAMERA_RADIUS = 20;  // Maximum zoom distance.
         this.MIN_CAMERA_ELEVATION = 30;
         this.MAX_CAMERA_ELEVATION = 90;
         this.ROTATION_SENSITIVITY = 0.5; 
-        this.PAN_SENSITIVITY = 0.05;
-        this.ZOOM_SENSITIVITY = 0.05; 
+        this.PAN_SENSITIVITY = 0.5;
+        this.ZOOM_SENSITIVITY = 0.5; 
 
         this. Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -31,8 +31,8 @@ class Camera {
         this.isZoomingOut = false;
         
         this.cameraOrigin = new THREE.Vector3(0, 0, 0);
-        this.cameraRadius = 4;  // Initial zoom distance.
-        this.cameraAzimuth = 0;
+        this.cameraRadius = (this.MIN_CAMERA_RADIUS + this.MAX_CAMERA_RADIUS) / 2;  // Initial zoom distance.
+        this.cameraAzimuth = 135;
         this.cameraElevation = 0;
         this.isLeftMouseDown = false;
         this.isMiddleMouseDown = false;
