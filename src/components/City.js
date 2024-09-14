@@ -1,3 +1,4 @@
+
 class City {
     constructor(size) {
         this.size = size;
@@ -10,23 +11,7 @@ class City {
         for (let x = 0; x < this.size; x++) {
             const column = [];
             for (let y = 0; y < this.size; y++) {
-                const tile = { 
-                    x, 
-                    y,
-                    building: undefined,
-                    update() {
-                        const x = Math.random();
-                        if (x < 0.01) {
-                            if (this.building === undefined) {
-                                this.building = "building-1";
-                            } else if (this.building === "building-1") {
-                                this.building = "building-2";
-                            } else if (this.building === "building-2") {
-                                this.building = "building-3";
-                            }
-                        }
-                    },
-                };
+                const tile = createTile(x, y);
                 column.push(tile);
             };
             this.data.push(column);
@@ -36,11 +21,19 @@ class City {
     update() {
         for (let x = 0; x < this.size; x++) {
             for (let y = 0; y < this.size; y++) {
-                const tile = this.data[x][y];
-                tile.update();
+                this.data[x][y].building?.update();
             };
         };
     };
 };
 
 export default City;
+
+function createTile(x, y) {
+    return { 
+        x, 
+        y,
+        terrainId: "grass",
+        building: undefined,
+    };
+}

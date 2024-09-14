@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 class Camera {
-    constructor(gameWindow) {
+    constructor(gameWindow, citySize) {
         this.gameWindow = gameWindow;
 
         this.DEG2RAD = Math.PI / 180;
@@ -30,19 +30,22 @@ class Camera {
         this.isZoomingIn = false;
         this.isZoomingOut = false;
         
-        this.cameraOrigin = new THREE.Vector3(0, 0, 0);
+        // this.cameraOrigin = new THREE.Vector3(0, 0, 0);  // Initial camera position.
+        this.cameraOrigin = new THREE.Vector3(citySize / 2, 0, citySize / 2);  // Initial camera position.
         this.cameraRadius = (this.MIN_CAMERA_RADIUS + this.MAX_CAMERA_RADIUS) / 2;  // Initial zoom distance.
         this.cameraAzimuth = 135;
-        this.cameraElevation = 0;
+        this.cameraElevation = 45;
         this.isLeftMouseDown = false;
         this.isMiddleMouseDown = false;
         this.isRightMouseDown = false;
         this.prevMouseX = 0;
         this.prevMouseY = 0;
 
+        // Needed for the raycaster to work.
+        this.mouse = new THREE.Vector2();
+
         this.createCamera();
 
-        this.gameWindow.addEventListener("mousedown", this.onMouseDown);
         this.gameWindow.addEventListener("mouseup", this.onMouseUp);
         this.gameWindow.addEventListener("mousemove", this.onMouseMove);
         window.addEventListener("keydown", this.onKeyDown);

@@ -2,11 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 import Camera from "./Camera.js";
+import { createAssetIstance } from "../assets.js";
 
-const Scene = ({ iteration, city }) => {
+const Scene = ({ iteration, city, onObjectSelected }) => {
     const rendererRef = useRef(null);
     const sceneRef = useRef(null);
     const cameraRef = useRef(null);
+
+    const rayCaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const [selectedObject, setSelectedObject] = useState(null);
 
     const [prevIteration, setPrevIteration] = useState(0);
     const [terrain, setTerrain] = useState([]);
@@ -28,7 +33,7 @@ const Scene = ({ iteration, city }) => {
         if (iteration === prevIteration) return;
         console.log("Rendering new city");
         update(city);
-    }, [iteration]);
+    }, [iteration, city]);
 
     function initialize(city) {
         sceneRef.current.clear();
@@ -36,13 +41,11 @@ const Scene = ({ iteration, city }) => {
         for (let x = 0; x < city.size; x++) {
             const column = [];
             for (let y = 0; y < city.size; y++) {
-                // Grass geometry.
-                const terrainGeometry = new THREE.BoxGeometry(1, 1, 1);
-                const terrainMaterial = new THREE.MeshLambertMaterial({ color: 0x00aa00 });
-                const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);                
-                terrainMesh.position.set(x, -0.5, y);
-                sceneRef.current.add(terrainMesh);
-                column.push(terrainMesh);
+                const terrainId = city.data[x][y].terrainId;
+
+                const mesh = createAssetIstance(terrainId, x, y);
+                sceneRef.current.add(mesh);
+                column.push(mesh);
             };
             newTerrain.push(column);
             buildings.push([...Array(city.size)]);  // NxN array of undefined.
@@ -51,29 +54,27 @@ const Scene = ({ iteration, city }) => {
     };
 
     function update(city) {
-        const newBuildingMeshes = [];
+        const newBuildingMeshes = buildings;
         for (let x = 0; x < city.size; x++) {
-            const column = [];
             for (let y = 0; y < city.size; y++) {
-                // Building geometry.
                 const tile = city.data[x][y];
+                const existingBuildingMesh = buildings[x][y];
 
-                if (tile.building && tile.building.startsWith("building")) {
-                    const height = parseInt(tile.building.split("-")[1]);
-                    const buildingGeometry = new THREE.BoxGeometry(1, height, 1);  // TODO: Reuse geometry.
-                    const buildingMaterial = new THREE.MeshLambertMaterial({ color: 0x777777 });  // TODO: Reuse material.
-                    const buildingMesh = new THREE.Mesh(buildingGeometry, buildingMaterial);
-                    buildingMesh.position.set(x, height / 2, y);
-                    
-                    if (buildings[x][y]) {
-                        sceneRef.current.remove(buildings[x][y]);
-                    };
-
-                    sceneRef.current.add(buildingMesh);
-                    column.push(buildingMesh);
+                // If the player removes a building, remove it from the scene.
+                if (!tile.building && existingBuildingMesh) {
+                    sceneRef.current.remove(existingBuildingMesh);
+                    newBuildingMeshes[x][y] = undefined;
                 };
+
+                // If the data has changed, update the mesh.
+                if (tile.building && tile.building.updated) {
+                    sceneRef.current.remove(existingBuildingMesh);
+                    // Pass full building as data object so that the height can be updated.
+                    newBuildingMeshes[x][y] = createAssetIstance(tile.building.id, x, y, tile.building);
+                    sceneRef.current.add(newBuildingMeshes[x][y]);
+                    tile.building.updated = false; // Reset the flag.
+                }
             };
-            newBuildingMeshes.push(column);
         };
         setBuildings(newBuildingMeshes);
     };
@@ -81,16 +82,16 @@ const Scene = ({ iteration, city }) => {
     const createScene = () => {
         const gameWindow = document.getElementById("render-target");
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x777777);
+        scene.background = new THREE.Color(0xbdc3c7);
         sceneRef.current = scene;
 
-        cameraRef.current = new Camera(gameWindow).camera;
+        cameraRef.current = new Camera(gameWindow, city.size);
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
         gameWindow.appendChild(renderer.domElement);
         rendererRef.current = renderer;
-    
+
         initialize(city);
 
         setupLights();
@@ -114,10 +115,10 @@ const Scene = ({ iteration, city }) => {
 
     const setupLights = () => {
         const lights = [
-            new THREE.AmbientLight(0xffffff, 0.2),
-            new THREE.DirectionalLight(0xffffff, 0.3),
-            new THREE.DirectionalLight(0xffffff, 0.3),
-            new THREE.DirectionalLight(0xffffff, 0.3),
+            new THREE.AmbientLight(0xffffff, 0.3),
+            new THREE.DirectionalLight(0xffffff, 0.8),
+            new THREE.DirectionalLight(0xffffff, 0.5),
+            new THREE.DirectionalLight(0xffffff, 0.5),
         ];
 
         lights[1].position.set(0, 1, 0);  // Top light.
@@ -128,7 +129,7 @@ const Scene = ({ iteration, city }) => {
     }
 
     const draw = () => {
-        rendererRef.current.render(sceneRef.current, cameraRef.current);
+        rendererRef.current.render(sceneRef.current, cameraRef.current.camera);
     };
 
     const start = () => {
@@ -139,10 +140,44 @@ const Scene = ({ iteration, city }) => {
         rendererRef.current.setAnimationLoop(null);
     };
 
+    const onMouseDown = (event) => {
+        cameraRef.current.onMouseDown(event);
+
+        // Calculate mouse position in normalized device coordinates.
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        // Update the picking ray with the camera and mouse position.
+        rayCaster.setFromCamera(mouse, cameraRef.current.camera);
+
+        let intersections = rayCaster.intersectObjects(sceneRef.current.children, false);
+
+        if (intersections.length > 0) {
+            // Unhighlight the previously selected object.
+            if (selectedObject) selectedObject.material.emissive.setHex(0x000000); 
+
+            // If the object is already selected, deselect it.
+            if (selectedObject === intersections[0].object) {
+                setSelectedObject(null);
+                return;
+            };
+
+            // Highlight the selected object.
+            const currSelectedObject = intersections[0].object;
+            currSelectedObject.material.emissive.setHex(0x555555); 
+            setSelectedObject(currSelectedObject);
+            
+            // Call the callback function with the selected object.
+            if (onObjectSelected) onObjectSelected(currSelectedObject);
+            
+        };
+    };
+
     return (
         <div 
             id="render-target" 
             style={{ width: "100%", height: "100%" }}
+            onMouseDown={onMouseDown}
         />
     );
 };
