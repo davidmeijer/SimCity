@@ -10,8 +10,8 @@ class Camera {
         this.MIDDLE_MOUSE_BUTTON = 1;
         this.RIGHT_MOUSE_BUTTON = 2;
 
-        this.MIN_CAMERA_RADIUS = 10;  // Minimum zoom distance.
-        this.MAX_CAMERA_RADIUS = 20;  // Maximum zoom distance.
+        this.MIN_CAMERA_RADIUS = 5;  // Minimum zoom distance.
+        this.MAX_CAMERA_RADIUS = 30;  // Maximum zoom distance.
         this.MIN_CAMERA_ELEVATION = 30;
         this.MAX_CAMERA_ELEVATION = 90;
         this.ROTATION_SENSITIVITY = 0.5; 
@@ -44,10 +44,13 @@ class Camera {
         // Needed for the raycaster to work.
         this.mouse = new THREE.Vector2();
 
+        this.lastMouseMoved = Date.now();
+
         this.createCamera();
 
         this.gameWindow.addEventListener("mouseup", this.onMouseUp);
-        this.gameWindow.addEventListener("mousemove", this.onMouseMove);
+        // this.gameWindow.addEventListener("mousemove", this.onMouseMove);
+        this.gameWindow.addEventListener("wheel", this.onMouseWheel);
         window.addEventListener("keydown", this.onKeyDown);
         window.addEventListener("keyup", this.onKeyUp);
 
@@ -92,12 +95,12 @@ class Camera {
         };
     };
 
-    onMouseMove = (event) => {
+    onMouseMove = (event, isToolSelected) => {
         const deltaX = event.clientX - this.prevMouseX;
         const deltaY = event.clientY - this.prevMouseY;
 
         // Handles the rotation of the camera.
-        if (this.isLeftMouseDown) {
+        if (this.isLeftMouseDown && !isToolSelected) {
             this.cameraAzimuth -= (deltaX * this.ROTATION_SENSITIVITY);
             this.cameraElevation -= (deltaY * this.ROTATION_SENSITIVITY);
             this.cameraElevation = Math.min(this.MAX_CAMERA_ELEVATION, Math.max(this.MIN_CAMERA_ELEVATION, this.cameraElevation));
@@ -106,24 +109,38 @@ class Camera {
 
         this.prevMouseX = event.clientX;
         this.prevMouseY = event.clientY;
+
+        this.lastMouseMoved = Date.now();
+    };
+
+    onMouseWheel = (event) => {
+        if (event.deltaY < 0) { 
+            this.zoomIn();
+        } else if (event.deltaY > 0) {
+            this.zoomOut();
+        };
     };
 
     // Function to start panning and zooming on key press.
     onKeyDown = (event) => {
         switch (event.key) {
             case "ArrowUp":
+            case "w":
                 this.isPanning.forward = true;
                 break;
 
             case "ArrowDown":
+            case "s":
                 this.isPanning.backward = true;
                 break;
 
             case "ArrowRight":
+            case "d":
                 this.isPanning.right = true;
                 break;
 
             case "ArrowLeft":
+            case "a":
                 this.isPanning.left = true;
                 break;
 
@@ -145,18 +162,22 @@ class Camera {
     onKeyUp = (event) => {
         switch (event.key) {
             case "ArrowUp":
+            case "w":
                 this.isPanning.forward = false;
                 break;
 
             case "ArrowDown":
+            case "s":
                 this.isPanning.backward = false;
                 break;
 
             case "ArrowRight":
+            case "d":
                 this.isPanning.right = false;
                 break;
 
             case "ArrowLeft":
+            case "a":
                 this.isPanning.left = false;
                 break;
 

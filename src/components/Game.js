@@ -11,6 +11,7 @@ const buttonConfigs = [
     { label: "commercial" },
     { label: "industrial" },
     { label: "road" },
+    { label: "tree" },
 ];
 
 const Game = () => {
@@ -102,6 +103,7 @@ const Game = () => {
                     iteration={iteration} 
                     city={cityState} 
                     onObjectSelected={handleObjectSelected}
+                    isToolSelected={activeToolId}
                 />
             </div>
         </div>

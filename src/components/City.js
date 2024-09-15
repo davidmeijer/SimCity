@@ -1,4 +1,6 @@
 
+import { buildingFactory } from '../buildings';
+
 class City {
     constructor(size) {
         this.size = size;
@@ -21,7 +23,11 @@ class City {
     update() {
         for (let x = 0; x < this.size; x++) {
             for (let y = 0; y < this.size; y++) {
-                this.data[x][y].building?.update();
+                const building = this.data[x][y].building;
+
+                if (building) {
+                    building.update();
+                };
             };
         };
     };
@@ -30,10 +36,17 @@ class City {
 export default City;
 
 function createTile(x, y) {
-    return { 
+    const tile = { 
         x, 
         y,
         terrainId: "grass",
         building: undefined,
     };
+
+    // Randomly assign a building to the tile with a 30% chance
+    if (Math.random() < 0.3) {
+        tile.building = buildingFactory("tree")();
+    }
+
+    return tile;
 }
